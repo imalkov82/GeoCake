@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  untitled.py
+#  core.py
 #  
-#  Copyright 2013 gily <gily@gily-HP-G62-Notebook-PC>
+#  Copyright 2013 gily <gilymerkado@gmail.com, igor.malkov82@gmail.com>
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,63 +20,93 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 #  
-#  
+#
+  
 import threading
 import time
+import logging
 
-g_events_array = []
-
-def gDeclare_events(numOfEvents):
-	events = []
-	for i in range(0, numOfEvents):
-		events.append(threading.Event())
-	for event in events:
-		event.clear()
-	return events
+logging.basicConfig(level=logging.DEBUG, 
+	format='[%(levelname)s] (%(threadName)-12s) %(message)s',
+	)
 	
 class interpolator(threading.Thread):
-	localEventNum = 0
+	def __init__(self, group=None, target=None, name=None,
+		args=(), kwargs=None, verbose=None):
+			threading.Thread.__init__(self, group=group, target=target,
+				name=name, verbose=verbose)
+			self.event = args[0]
+			return
+        
 	def run(self):
-		for i in range(0, 5):
-			print('interpolator alive')
-			time.sleep(1)
-		print('interpolator done.')
+		logging.debug('running')
+		time.sleep(5)
+		logging.debug('setting event')
+		self.setEvent(self.event)
+		logging.debug('Done')
 	
-	def interSetEvent(self):
-		interEvent.set()
+	def setEvent(self, event):
+		event.set()
 		
 class dbHandler(threading.Thread):
-	localEventNum = 1
+	def __init__(self, group=None, target=None, name=None,
+		args=(), kwargs=None, verbose=None):
+			threading.Thread.__init__(self, group=group, target=target,
+				name=name, verbose=verbose)
+			self.event = args[0]
+			return
+        
 	def run(self):
-		for i in range(0, 5):
-			print('debHandler alive')
-			time.sleep(0.5)
-		print('dbHandelr done.')
+		logging.debug('running')
+		time.sleep(0.5)
+		logging.debug('setting event')
+		self.setEvent(self.event)
+		logging.debug('Done')
+	
+	def setEvent(self, event):
+		event.set()
 
 def main():
-	global g_events_array
-	#Create events and set to global array
-	g_events_array = gDeclare_events(2)
+	#Create an event
+	event = threading.Event()
 	
 	#Create threads
-	inter = interpolator()
-	dbh = dbHandler()
+	inter = interpolator(name='interpolator', args=(event,))
+	dbh = dbHandler(name='dbHandler', args=(event,))
 	
-	print('Starting threads')
+	threads = [inter, dbh]
+	
+	logging.debug('Starting threads')
 	inter.start()
 	dbh.start()
 	
 	#Sleep on events
-	
-	
-	print('Joinning inter')
-	inter.join()
-	print('main: dbh.isAlive', dbh.isAlive())
-	print('joining dbh')
-	dbh.join()
+	logging.debug('sleeping on event')
+	event.wait()
+	while True:
+		#check which thread is still working
+		if event.isSet():
+			logging.debug('saw event.isSet(). Checking who set it')
+			if inter.isAlive():
+				logging.debug('interpolator is still alive')
+				if dbh.isAlive():
+					logging.debug('dbHandler is still alive. Unknown set the event')
+				else:
+					logging.debug('dbHandler is not alive. dbh set the event. keep waiting for interpolator')
+					logging.debug('clear the event')
+					event.clear()
+			else:
+				logging.debug('interpolator is not alive')
+				if dbh.isAlive():
+					logging.debug('dbHandler not alive. interpolator set the event.Wait for dbHandler')
+					logging.debug('clear the event')
+					event.clear()
+				else:
+					logging.debug('Both threads not alive. can continue')
+					break
 	
 	# Receive the events from other threads
-	print('Exiting')
+	logging.debug('Exiting')
 	return 0
 
 if __name__ == '__main__':
