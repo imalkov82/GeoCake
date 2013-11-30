@@ -1,7 +1,8 @@
 class Strata:
-    #properties
-    strata_tag = 'tag'
-    width = 0
+
+    #constructor
+    def __init__(self, tag=None, width=None):
+       pass
     #methods
     def disp_props():
         pass
@@ -9,4 +10,3 @@ class Strata:
         pass
     def get_width():
         pass
-        

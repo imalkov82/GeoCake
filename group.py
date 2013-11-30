@@ -1,6 +1,9 @@
 class Group:
-    #properties
-    arr_corelog = []
+
+    #constructor
+    def __init__(self, arr_corelog=None):
+       pass
+
     #methods
     def add_corelog(corelog_object):
         pass
