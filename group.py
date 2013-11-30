@@ -11,3 +11,5 @@ class Group:
         pass
     def intorpolateCLArr():
         pass
+    def unite_corelogs(cl1_tag, cl2_tag):
+        pass
